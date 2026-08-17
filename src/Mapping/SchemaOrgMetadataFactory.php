@@ -47,15 +47,41 @@ final class SchemaOrgMetadataFactory
     {
         $reflection = new \ReflectionClass($class);
 
-        $classAttribute = $reflection->getAttributes(SchemaOrg::class)[0] ?? null;
-        if (null === $classAttribute) {
+        $declared = $this->findSchemaOrg($reflection);
+        if (null === $declared) {
             return null;
         }
 
         return new ClassMapping(
-            nodeClass: $this->resolveNodeClass($classAttribute->newInstance()->type, $class),
+            nodeClass: $this->resolveNodeClass($declared->type, $class),
             properties: $this->buildProperties($reflection),
         );
+    }
+
+    /**
+     * #[SchemaOrg] on the class, or the nearest ancestor that declares one.
+     *
+     * getAttributes() does not walk the parent chain, but a DTO hierarchy is exactly
+     * where you want it to: data-contracts has AbstractEntityDto -> ArtworkDto ->
+     * DrawingDto -> CartoonDto, where the leaves add a contentType() and nothing else.
+     * Without inheritance every leaf would have to restate its type.
+     *
+     * Nearest declaration wins, so a subclass can still narrow the type -- Painting
+     * for PaintingDto where its parent says VisualArtwork.
+     *
+     * Property attributes need no equivalent: getProperties() already includes
+     * inherited ones.
+     */
+    private function findSchemaOrg(\ReflectionClass $reflection): ?SchemaOrg
+    {
+        for ($class = $reflection; false !== $class; $class = $class->getParentClass()) {
+            $attribute = $class->getAttributes(SchemaOrg::class)[0] ?? null;
+            if (null !== $attribute) {
+                return $attribute->newInstance();
+            }
+        }
+
+        return null;
     }
 
     /** @return list<PropertyMapping> */

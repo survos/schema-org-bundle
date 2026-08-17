@@ -212,6 +212,36 @@ final class SchemaOrgMapperTest extends TestCase
         self::assertSame('Stalker', $this->mapper->toNode($movie)->toArray()['name']);
     }
 
+    /**
+     * The data-contracts DTO shape: leaves like DrawingDto extend ArtworkDto and add
+     * only a contentType(). Without inherited #[SchemaOrg] every leaf would have to
+     * restate its type.
+     */
+    public function testTypeAndPropertiesAreInherited(): void
+    {
+        $drawing = new \Survos\SchemaOrgBundle\Tests\Fixture\DrawingDtoFixture();
+        $drawing->title = 'Study of Hands';   // declared on the abstract base
+        $drawing->medium = 'graphite';        // declared on the middle class
+
+        $node = $this->mapper->toNode($drawing)->toArray();
+
+        self::assertSame('VisualArtwork', $node['@type']);
+        self::assertSame('Study of Hands', $node['name']);
+        self::assertSame('graphite', $node['artMedium']);
+    }
+
+    /** A subclass can narrow the inherited type -- nearest declaration wins. */
+    public function testSubclassCanOverrideTheInheritedType(): void
+    {
+        $painting = new \Survos\SchemaOrgBundle\Tests\Fixture\PaintingDtoFixture();
+        $painting->title = 'Sunflowers';
+
+        $node = $this->mapper->toNode($painting)->toArray();
+
+        self::assertSame('Painting', $node['@type']);
+        self::assertSame('Sunflowers', $node['name']);
+    }
+
     public function testUnmappedClassIsRejectedWithAnActionableMessage(): void
     {
         $this->expectException(\LogicException::class);
