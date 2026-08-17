@@ -13,6 +13,8 @@ use Survos\SchemaOrgBundle\Graph\SchemaOrgGraph;
 use Survos\SchemaOrgBundle\Mapping\SchemaOrgMapper;
 use Survos\SchemaOrgBundle\Mapping\SchemaOrgMetadataFactory;
 use Survos\SchemaOrgBundle\Renderer\SchemaOrgRenderer;
+use Survos\SchemaOrgBundle\Validator\JsonLdExtractor;
+use Survos\SchemaOrgBundle\Validator\JsonLdValidator;
 use Survos\SchemaOrgBundle\Twig\SchemaOrgExtension;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -71,6 +73,11 @@ final class SurvosSchemaOrgBundle extends AbstractSurvosBundle
         // shared, so the reflection pass happens once per class per process.
         $services->set(SchemaOrgMetadataFactory::class);
         $services->set(SchemaOrgMapper::class)->public();
+
+        // Used by schema:validate, and usable directly for a smoke test in a
+        // functional test suite. No HTTP, no HTML parsing dependencies.
+        $services->set(JsonLdExtractor::class)->public();
+        $services->set(JsonLdValidator::class)->public();
 
         // Profiler integration, debug only — same guard and explicit tag as
         // elastic-bundle, the established shape in this monorepo. The tag is explicit

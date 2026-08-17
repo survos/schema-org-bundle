@@ -192,6 +192,38 @@ instead.
 Both are the same trade: structured data is a claim about what something *is*.
 Reach for the type that is true, not the type with the SERP feature.
 
+## Commands
+
+```bash
+bin/console schema:map                       # every Doctrine entity
+bin/console schema:map 'App\Entity\Package'  # one class
+bin/console schema:map --unmapped            # also list classes with no #[SchemaOrg]
+```
+
+Prints what each mapped class maps to, property by property, **and the public
+properties it doesn't map**. That last list is the point: a mapping covering six of
+twenty-seven fields looks finished from the outside.
+
+```bash
+bin/console schema:validate https://packages.survos.com/packages/index
+bin/console schema:validate https://example.com/x --dump
+```
+
+Fetches a URL, extracts every JSON-LD block, and checks it. **Errors** (exit 1):
+malformed JSON, missing `@context`, a node with no `@type`, duplicate `@id`.
+**Warnings**: a reference pointing at no node in the block, a null property value,
+and an `@id`/`url` whose scheme disagrees with the page it came from — that last
+one found a live reverse-proxy misconfiguration publishing `http://` identities on
+an HTTPS site.
+
+It deliberately does **not** check per-type "required" properties. Schema.org marks
+nothing required; those lists belong to Google's rich-result program, change without
+notice, and hardcoding them here would claim an authority this bundle doesn't have.
+Use Google's validator for eligibility, this for correctness.
+
+`JsonLdExtractor` and `JsonLdValidator` are public services, so you can assert on a
+page's structured data from a functional test without shelling out.
+
 ## Configuration
 
 ```yaml
