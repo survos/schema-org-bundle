@@ -7,6 +7,7 @@ namespace Survos\SchemaOrgBundle\Tests\Twig;
 use PHPUnit\Framework\TestCase;
 use Spatie\SchemaOrg\Schema;
 use Survos\SchemaOrgBundle\Graph\SchemaOrgGraph;
+use Survos\SchemaOrgBundle\Renderer\SchemaOrgRenderer;
 use Survos\SchemaOrgBundle\Twig\SchemaOrgExtension;
 
 final class SchemaOrgExtensionTest extends TestCase
@@ -100,7 +101,11 @@ final class SchemaOrgExtensionTest extends TestCase
 
     private function extension(bool $prettyPrint = false, bool $debugPanel = false): SchemaOrgExtension
     {
-        return new SchemaOrgExtension($this->graph, $prettyPrint, $debugPanel);
+        return new SchemaOrgExtension(
+            $this->graph,
+            new SchemaOrgRenderer($this->graph, $prettyPrint),
+            $debugPanel,
+        );
     }
 
     private function scriptBody(string $html): string

@@ -97,9 +97,29 @@ wrapper doesn't expose (`hide()`/`show()`, a custom `@context`).
 survos_schema_org:
     pretty_print: '%kernel.debug%'   # indent the JSON-LD
     debug_panel:  '%kernel.debug%'   # let schema_org_debug() render
+    auto_inject:  false              # insert before </head> with no Twig call
 ```
 
-Both default to `%kernel.debug%`, so there is normally nothing to configure.
+The first two default to `%kernel.debug%`, so there is normally nothing to
+configure.
+
+### auto_inject
+
+With `auto_inject: true` a `kernel.response` listener inserts the script before
+the first `</head>` on successful, non-streamed `text/html` responses — no Twig
+call, whatever the layout.
+
+It is **off by default on purpose**: `{{ render_schema_org() }}` is greppable, and
+injected output is not. Turn it on for apps whose layout you'd rather not edit, or
+that have several layouts.
+
+A template that calls `render_schema_org()` suppresses the injection for that
+request, so enabling it can never produce two `@graph` blocks. The listener skips
+streamed, binary, compressed, `attachment`, non-HTML, redirect, and error
+responses, and drops a now-stale `Content-Length`.
+
+It does **not** inject `schema_org_debug()` — that panel is a dev aid you place
+yourself; auto-inject handles the semantic payload only.
 
 ## Escaping
 

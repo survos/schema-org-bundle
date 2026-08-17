@@ -38,6 +38,15 @@ final class SchemaOrgGraph
     /** Monotonic key source for nodes with no @id; see identifierFor(). */
     private int $anonymousCount = 0;
 
+    /**
+     * Whether this request has already emitted its script tag.
+     *
+     * Request state about the graph, so it lives here and is cleared by reset()
+     * alongside the nodes. It exists so auto-inject and an explicit
+     * render_schema_org() in a template cannot both fire and produce two tags.
+     */
+    private bool $rendered = false;
+
     public function __construct()
     {
         $this->graph = new Graph();
@@ -115,6 +124,16 @@ final class SchemaOrgGraph
         return $this->graph->toArray();
     }
 
+    public function markRendered(): void
+    {
+        $this->rendered = true;
+    }
+
+    public function isRendered(): bool
+    {
+        return $this->rendered;
+    }
+
     /** Escape hatch to the underlying spatie graph (hide/show, custom @context). */
     public function graph(): Graph
     {
@@ -134,6 +153,7 @@ final class SchemaOrgGraph
     {
         $this->graph = new Graph();
         $this->anonymousCount = 0;
+        $this->rendered = false;
     }
 
     /**
