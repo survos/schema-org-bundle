@@ -22,7 +22,6 @@ final class SchemaOrgExtensionTest extends TestCase
     public function testRendersNothingWhenNothingWasCollected(): void
     {
         self::assertSame('', $this->extension()->render());
-        self::assertSame('', $this->extension(debugPanel: true)->debugPanel());
     }
 
     public function testRendersOneLdJsonScriptTag(): void
@@ -78,34 +77,11 @@ final class SchemaOrgExtensionTest extends TestCase
         self::assertStringContainsString("\n", $this->extension(prettyPrint: true)->render());
     }
 
-    public function testDebugPanelRendersOnlyWhenEnabled(): void
+
+
+    private function extension(bool $prettyPrint = false): SchemaOrgExtension
     {
-        $this->graph->add(Schema::movie()->name('2001'));
-
-        self::assertSame('', $this->extension()->debugPanel());
-
-        $panel = $this->extension(debugPanel: true)->debugPanel();
-        self::assertStringContainsString('Schema.org graph (1 node)', $panel);
-        // The panel prints the JSON as text, so its markup must be entity-escaped.
-        self::assertStringNotContainsString('{"@context"', $panel);
-        self::assertStringContainsString('&quot;@context&quot;', $panel);
-    }
-
-    public function testDebugPanelPluralisesNodeCount(): void
-    {
-        $this->graph->add(Schema::movie()->identifier('https://example.com/#a'));
-        $this->graph->add(Schema::movie()->identifier('https://example.com/#b'));
-
-        self::assertStringContainsString('Schema.org graph (2 nodes)', $this->extension(debugPanel: true)->debugPanel());
-    }
-
-    private function extension(bool $prettyPrint = false, bool $debugPanel = false): SchemaOrgExtension
-    {
-        return new SchemaOrgExtension(
-            $this->graph,
-            new SchemaOrgRenderer($this->graph, $prettyPrint),
-            $debugPanel,
-        );
+        return new SchemaOrgExtension(new SchemaOrgRenderer($this->graph, $prettyPrint));
     }
 
     private function scriptBody(string $html): string

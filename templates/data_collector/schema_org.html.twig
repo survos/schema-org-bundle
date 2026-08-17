@@ -1,0 +1,138 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {# Nothing collected: stay out of the toolbar entirely rather than showing a zero. #}
+    {% if collector.count > 0 %}
+        {% set icon %}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="4.5" r="2.5"/>
+                <circle cx="4.5" cy="18" r="2.5"/>
+                <circle cx="19.5" cy="18" r="2.5"/>
+                <line x1="10.2" y1="6.4" x2="6" y2="15.7"/>
+                <line x1="13.8" y1="6.4" x2="18" y2="15.7"/>
+                <line x1="7" y1="18" x2="17" y2="18"/>
+            </svg>
+            <span class="sf-toolbar-value">{{ collector.count }}</span>
+        {% endset %}
+
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>Nodes</b>
+                <span class="sf-toolbar-status">{{ collector.count }}</span>
+            </div>
+
+            <div class="sf-toolbar-info-piece">
+                <b>Rendered</b>
+                <span class="sf-toolbar-status sf-toolbar-status-{{ collector.rendered ? 'green' : 'yellow' }}">
+                    {{ collector.rendered ? 'yes' : 'no' }}
+                </span>
+            </div>
+
+            {% for type, count in collector.types %}
+                <div class="sf-toolbar-info-piece">
+                    <b>{{ type }}</b>
+                    <span>{{ count }}</span>
+                </div>
+            {% endfor %}
+        {% endset %}
+
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig') }}
+    {% endif %}
+{% endblock %}
+
+{% block menu %}
+    <span class="label {{ collector.count > 0 ? '' : 'disabled' }}">
+        <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="4.5" r="2.5"/>
+                <circle cx="4.5" cy="18" r="2.5"/>
+                <circle cx="19.5" cy="18" r="2.5"/>
+                <line x1="10.2" y1="6.4" x2="6" y2="15.7"/>
+                <line x1="13.8" y1="6.4" x2="18" y2="15.7"/>
+                <line x1="7" y1="18" x2="17" y2="18"/>
+            </svg>
+        </span>
+        <strong>Schema.org</strong>
+        {% if collector.count > 0 %}
+            <span class="count"><span>{{ collector.count }}</span></span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Schema.org graph</h2>
+
+    {% if collector.count == 0 %}
+        <div class="empty">
+            <p>No Schema.org nodes were collected for this request.</p>
+            <p>
+                Contribute them from a controller or listener with
+                <code>SchemaOrgGraph::add()</code>.
+            </p>
+        </div>
+    {% else %}
+        <div class="metrics">
+            <div class="metric">
+                <span class="value">{{ collector.count }}</span>
+                <span class="label">Nodes</span>
+            </div>
+            <div class="metric">
+                <span class="value">{{ collector.types|length }}</span>
+                <span class="label">Type{{ collector.types|length == 1 ? '' : 's' }}</span>
+            </div>
+            <div class="metric">
+                <span class="value">{{ collector.rendered ? 'Yes' : 'No' }}</span>
+                <span class="label">Rendered</span>
+            </div>
+        </div>
+
+        {% if not collector.rendered %}
+            {# The failure this panel exists to make visible: nodes collected, nothing
+               published, and the page looks perfectly fine either way. #}
+            <div class="status status-warning">
+                <p>
+                    These nodes were collected but <strong>never emitted</strong> — the page
+                    has no JSON-LD. Add <code>{{ '{{ render_schema_org() }}' }}</code> to your
+                    layout, or set <code>survos_schema_org.auto_inject: true</code>.
+                </p>
+            </div>
+        {% endif %}
+
+        <h3>Nodes</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>@id</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for node in collector.nodes %}
+                    <tr>
+                        <td><code>{{ node.type }}</code></td>
+                        <td>{{ node.label ?? '—' }}</td>
+                        <td>
+                            {% if node.id %}
+                                <code>{{ node.id }}</code>
+                            {% else %}
+                                {# Anonymous nodes can't be referenced or deduplicated. #}
+                                <span class="text-muted">anonymous</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3>JSON-LD</h3>
+
+        <p class="help">
+            <code>@context</code>: <code>{{ collector.context }}</code> —
+            this is the document as published, before script-tag escaping.
+        </p>
+
+        <pre class="code">{{ collector.json }}</pre>
+    {% endif %}
+{% endblock %}

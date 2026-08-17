@@ -58,7 +58,6 @@ final class BundleBootTest extends KernelTestCase
         $twig = static::getContainer()->get('twig');
 
         self::assertNotNull($twig->getFunction('render_schema_org'));
-        self::assertNotNull($twig->getFunction('schema_org_debug'));
     }
 
     public function testRenderedTemplateEmitsTheCollectedGraph(): void

@@ -47,15 +47,21 @@ final class MovieController extends AbstractController
 Render it once, in `base.html.twig`:
 
 ```twig
-{% block javascripts %}
+{% block head %}
+    {{ parent() }}
     {{ render_schema_org() }}
-    {{ schema_org_debug() }}
 {% endblock %}
 ```
 
-Both return an empty string when the page collected nothing, so they are safe to
-call unconditionally. Pass a CSP nonce if the app needs one:
+It returns an empty string when the page collected nothing, so it is safe to call
+unconditionally. Pass a CSP nonce if the app needs one:
 `{{ render_schema_org(csp_nonce) }}`.
+
+To see what a page collected, use the **Schema.org** item in the web debug
+toolbar — it shows the node count and opens a panel listing every node with the
+full JSON-LD. The panel also reports whether the graph actually reached the page,
+which is the one failure that is otherwise invisible: collecting nodes and
+publishing none looks exactly like a page with no structured data.
 
 ### Without touching the constructor
 
@@ -159,11 +165,10 @@ Give anything reachable in a cycle an `@id`.
 # config/packages/survos_schema_org.yaml
 survos_schema_org:
     pretty_print: '%kernel.debug%'   # indent the JSON-LD
-    debug_panel:  '%kernel.debug%'   # let schema_org_debug() render
     auto_inject:  false              # insert before </head> with no Twig call
 ```
 
-The first two default to `%kernel.debug%`, so there is normally nothing to
+`pretty_print` defaults to `%kernel.debug%`, so there is normally nothing to
 configure.
 
 ### auto_inject
@@ -180,9 +185,6 @@ A template that calls `render_schema_org()` suppresses the injection for that
 request, so enabling it can never produce two `@graph` blocks. The listener skips
 streamed, binary, compressed, `attachment`, non-HTML, redirect, and error
 responses, and drops a now-stale `Content-Length`.
-
-It does **not** inject `schema_org_debug()` — that panel is a dev aid you place
-yourself; auto-inject handles the semantic payload only.
 
 ## Escaping
 

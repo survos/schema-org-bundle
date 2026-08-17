@@ -6,6 +6,7 @@ namespace Survos\SchemaOrgBundle;
 
 use Survos\Kit\AbstractSurvosBundle;
 use Survos\Kit\SurvosKitBundle;
+use Survos\SchemaOrgBundle\DataCollector\SchemaOrgCollector;
 use Survos\SchemaOrgBundle\EventListener\SchemaOrgAutoInjectListener;
 use Survos\SchemaOrgBundle\EventListener\SchemaOrgResetListener;
 use Survos\SchemaOrgBundle\Graph\SchemaOrgGraph;
@@ -13,6 +14,7 @@ use Survos\SchemaOrgBundle\Mapping\SchemaOrgMapper;
 use Survos\SchemaOrgBundle\Mapping\SchemaOrgMetadataFactory;
 use Survos\SchemaOrgBundle\Renderer\SchemaOrgRenderer;
 use Survos\SchemaOrgBundle\Twig\SchemaOrgExtension;
+use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Kernel\RequiredBundle;
@@ -29,10 +31,6 @@ final class SurvosSchemaOrgBundle extends AbstractSurvosBundle
                 ->scalarNode('pretty_print')
                     ->defaultValue('%kernel.debug%')
                     ->info('Indent the JSON-LD. Readable in dev, wasted bytes in prod, so it follows kernel.debug by default. Accepts a bool or a parameter reference.')
-                ->end()
-                ->scalarNode('debug_panel')
-                    ->defaultValue('%kernel.debug%')
-                    ->info('Let schema_org_debug() render its panel. Follows kernel.debug by default; set false to keep the Twig call in the template but render nothing.')
                 ->end()
                 ->booleanNode('auto_inject')
                     ->defaultFalse()
@@ -63,8 +61,7 @@ final class SurvosSchemaOrgBundle extends AbstractSurvosBundle
 
         // Autoconfigured so twig-bundle's AttributeExtensionPass picks up the
         // #[AsTwigFunction] methods.
-        $services->set(SchemaOrgExtension::class)
-            ->arg('$debugPanel', $config['debug_panel']);
+        $services->set(SchemaOrgExtension::class);
 
         $services->set(SchemaOrgResetListener::class);
 
@@ -72,6 +69,17 @@ final class SurvosSchemaOrgBundle extends AbstractSurvosBundle
         // shared, so the reflection pass happens once per class per process.
         $services->set(SchemaOrgMetadataFactory::class);
         $services->set(SchemaOrgMapper::class)->public();
+
+        // Profiler integration, debug only — same guard and explicit tag as
+        // elastic-bundle, the established shape in this monorepo. The tag is explicit
+        // rather than left to autoconfiguration so the panel keeps a stable id.
+        if ($builder->getParameter('kernel.debug') && class_exists(AbstractDataCollector::class)) {
+            $services->set(SchemaOrgCollector::class)
+                ->tag('data_collector', [
+                    'template' => '@SurvosSchemaOrg/data_collector/schema_org.html.twig',
+                    'id' => 'survos_schema_org',
+                ]);
+        }
 
         if ($config['auto_inject']) {
             $services->set(SchemaOrgAutoInjectListener::class);
