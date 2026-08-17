@@ -135,6 +135,13 @@ relations (`as:`), nested `#[SchemaOrg]` objects, and cycles. Null, empty-string
 and empty-list values are omitted rather than emitted as `null` — an absent
 property is correct JSON-LD; `"name": null` is not.
 
+Property hooks, `private(set)` properties, constructor-promoted `readonly`
+properties, and zero-argument getters can all carry `#[SchemaProperty]`.
+
+**Full reference: [docs/attributes.md](docs/attributes.md)** — every parameter,
+what can carry the attribute, value handling, relations, references vs. embedding,
+cycle behaviour, and where the declarative half stops.
+
 **What it does not:** cross-links, canonical-URL-derived `@id`s, and conditional
 rules stay hand-written. That's a deliberate boundary — expressing them in
 attributes means inventing a DSL. `add()` returns the node, so the rest is

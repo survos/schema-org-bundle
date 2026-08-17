@@ -191,6 +191,27 @@ final class SchemaOrgMapperTest extends TestCase
         self::assertSame('https://example.com/2001#movie', $this->graph->toArray()['@graph'][0]['@id']);
     }
 
+    /**
+     * Reflection can only read public properties, so a #[SchemaProperty] on a private
+     * one would emit a node quietly missing that field -- the failure mode is a
+     * plausible-looking graph, which is worse than an exception.
+     */
+    public function testPropertyTheMapperCannotReadIsRejected(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessageMatches('/not publicly readable/');
+
+        $this->mapper->toNode(new \Survos\SchemaOrgBundle\Tests\Fixture\PrivatelyMappedThing());
+    }
+
+    /** private(set) reads as public, so it maps -- the shape packages' Package uses. */
+    public function testPrivateSetPropertyIsReadable(): void
+    {
+        $movie = new \Survos\SchemaOrgBundle\Tests\Fixture\AsymmetricMovie('Stalker');
+
+        self::assertSame('Stalker', $this->mapper->toNode($movie)->toArray()['name']);
+    }
+
     public function testUnmappedClassIsRejectedWithAnActionableMessage(): void
     {
         $this->expectException(\LogicException::class);

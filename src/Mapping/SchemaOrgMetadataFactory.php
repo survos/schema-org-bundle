@@ -63,10 +63,25 @@ final class SchemaOrgMetadataFactory
     {
         $mappings = [];
 
-        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+        // All properties, not just public ones: a #[SchemaProperty] on a property the
+        // mapper cannot read is a mistake, and skipping it silently would emit a node
+        // quietly missing a field. Asymmetric visibility (private(set)) reads as public
+        // here, which is why it works.
+        foreach ($reflection->getProperties() as $property) {
             $attribute = $property->getAttributes(SchemaProperty::class)[0] ?? null;
             if (null === $attribute) {
                 continue;
+            }
+
+            if (!$property->isPublic()) {
+                throw new \LogicException(\sprintf(
+                    '%s::$%s carries #[SchemaProperty] but is not publicly readable, so the '
+                    . 'mapper cannot read it. Make it public, use private(set) for a '
+                    . 'public-get/private-set property, or move the attribute to a '
+                    . 'zero-argument getter.',
+                    $reflection->getName(),
+                    $property->getName(),
+                ));
             }
 
             $name = $property->getName();
