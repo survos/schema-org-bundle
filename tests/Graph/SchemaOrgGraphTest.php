@@ -131,6 +131,38 @@ final class SchemaOrgGraphTest extends TestCase
         self::assertSame('https://example.com/2.jpg', $graph->toArray()['@graph'][0]['url']);
     }
 
+    /**
+     * ResetInterface, not just the kernel.request listener: a messenger:consume
+     * worker never fires kernel.request, so under a long-running consumer the
+     * listener would never run once for the whole life of the process. The tag
+     * Symfony derives from this interface is what clears the graph between
+     * messages, and between requests under FrankenPHP worker mode.
+     */
+    public function testIsResettableSoWorkersAndConsumersClearItAutomatically(): void
+    {
+        $graph = new SchemaOrgGraph();
+
+        self::assertInstanceOf(\Symfony\Contracts\Service\ResetInterface::class, $graph);
+
+        $graph->add(Schema::movie()->identifier('https://example.com/#movie'));
+        $graph->reset();
+
+        self::assertTrue($graph->isEmpty());
+    }
+
+    public function testResetClearsTheRenderedFlag(): void
+    {
+        $graph = new SchemaOrgGraph();
+        $graph->add(Schema::movie()->identifier('https://example.com/#movie'));
+        $graph->markRendered();
+
+        $graph->reset();
+
+        // Otherwise auto_inject would think the new request had already rendered and
+        // publish nothing at all.
+        self::assertFalse($graph->isRendered());
+    }
+
     public function testAddIsChainable(): void
     {
         $graph = new SchemaOrgGraph();

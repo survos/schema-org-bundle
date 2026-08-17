@@ -7,6 +7,7 @@ namespace Survos\SchemaOrgBundle\Graph;
 use Spatie\SchemaOrg\BaseType;
 use Spatie\SchemaOrg\Graph;
 use Spatie\SchemaOrg\Type;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Request-scoped collector for Schema.org nodes.
@@ -31,7 +32,7 @@ use Spatie\SchemaOrg\Type;
  *
  * Reach through to {@see graph()} for the upstream API (hide/show, contexts).
  */
-final class SchemaOrgGraph
+final class SchemaOrgGraph implements ResetInterface
 {
     private Graph $graph;
 
@@ -143,11 +144,19 @@ final class SchemaOrgGraph
     /**
      * Drops every collected node.
      *
-     * Required under long-running runtimes (FrankenPHP worker mode, RoadRunner)
-     * where the container — and so this service — outlives the request, and last
-     * request's nodes would otherwise leak into the next page.
-     * {@see \Survos\SchemaOrgBundle\EventListener\SchemaOrgResetListener} calls
-     * this automatically; call it by hand only if you disabled that listener.
+     * Reached two ways, deliberately:
+     *
+     *  - ResetInterface + the kernel.reset tag, which Symfony invokes between
+     *    requests under a long-running runtime (FrankenPHP worker mode,
+     *    RoadRunner) AND between messages in a `messenger:consume` worker. The
+     *    latter is why the interface matters: a consumer never fires
+     *    kernel.request, so a listener alone would never fire for the whole life
+     *    of the worker process.
+     *  - {@see \Survos\SchemaOrgBundle\EventListener\SchemaOrgResetListener}, on
+     *    kernel.request, so a request starts clean even if the previous one died
+     *    before anything reset it.
+     *
+     * Both are idempotent, so doing both costs nothing.
      */
     public function reset(): void
     {

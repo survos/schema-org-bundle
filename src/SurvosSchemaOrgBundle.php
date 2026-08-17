@@ -51,6 +51,8 @@ final class SurvosSchemaOrgBundle extends AbstractSurvosBundle
 
         // Public: the graph is injected directly by app controllers and services, so it
         // must survive compilation even when nothing else in the container references it.
+        // kernel.reset (from ResetInterface via autoconfigure) is what clears the graph
+        // between messages in a messenger worker, where no kernel.request ever fires.
         $services->set(SchemaOrgGraph::class)->public();
 
         // '%kernel.debug%' arrives here as an unresolved parameter string when the app
