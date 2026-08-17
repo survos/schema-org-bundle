@@ -90,6 +90,69 @@ $schemaOrg->getOrCreate(Organization::class, 'site')->url('https://survos.com');
 `graph()` returns the underlying `Spatie\SchemaOrg\Graph` for anything this
 wrapper doesn't expose (`hide()`/`show()`, a custom `@context`).
 
+## Attribute mapping
+
+Annotate the entity and let `SchemaOrgMapper` build the node:
+
+```php
+use Survos\SchemaOrgBundle\Attribute\SchemaOrg;
+use Survos\SchemaOrgBundle\Attribute\SchemaProperty;
+
+#[SchemaOrg('Movie')]
+final class Movie
+{
+    #[SchemaProperty('name')]        public ?string $title = null;
+    #[SchemaProperty('description')] public ?string $overview = null;
+    #[SchemaProperty('dateCreated')] public ?int $year = null;
+    #[SchemaProperty('genre')]       public ?array $genres = null;
+
+    // The column holds a name, not a Person — wrap it, and give the wrapped node
+    // an @id so the same person is one node however many times they appear.
+    #[SchemaProperty('director', as: 'Person', idPattern: '{base}/people/{value}')]
+    public ?string $director = null;
+
+    #[SchemaProperty('actor', as: 'Person', idPattern: '{base}/people/{value}')]
+    public ?array $actors = null;
+}
+```
+
+```php
+$node = $mapper->add($movie, $canonicalUrl . '#movie', $siteUrl);
+```
+
+`#[SchemaProperty]` is orthogonal to `#[Field]` from `survos/field-bundle` — that
+one describes grid/search/API exposure, this one describes JSON-LD meaning. They
+coexist on the same property.
+
+**What it handles:** scalars, `DateTimeInterface`, backed enums, lists, name-only
+relations (`as:`), nested `#[SchemaOrg]` objects, and cycles. Null, empty-string,
+and empty-list values are omitted rather than emitted as `null` — an absent
+property is correct JSON-LD; `"name": null` is not.
+
+**What it does not:** cross-links, canonical-URL-derived `@id`s, and conditional
+rules stay hand-written. That's a deliberate boundary — expressing them in
+attributes means inventing a DSL. `add()` returns the node, so the rest is
+ordinary fluent spatie code:
+
+```php
+$node = $mapper->add($movie, $canonicalUrl . '#movie', $siteUrl);
+$node->mainEntityOfPage($webPage->referenced());
+```
+
+Reflection runs once per class and is cached, so mapping 500 rows is one
+reflection pass, not 500.
+
+### References vs. embedding
+
+A wrapped or nested node is by default added to the graph as its own top-level
+node and linked by `@id` — that's what keeps one `Person` one node when several
+entities share them. Pass `reference: false` to embed a copy instead.
+
+A node with no `@id` can't be referenced, so it's embedded. The one exception is
+closing a cycle (`A knows B knows A`): embedding there would put the node inside
+itself and recurse until the stack ran out, so an un-`@id`'d back-link is dropped.
+Give anything reachable in a cycle an `@id`.
+
 ## Configuration
 
 ```yaml

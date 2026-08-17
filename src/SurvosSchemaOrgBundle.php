@@ -9,6 +9,8 @@ use Survos\Kit\SurvosKitBundle;
 use Survos\SchemaOrgBundle\EventListener\SchemaOrgAutoInjectListener;
 use Survos\SchemaOrgBundle\EventListener\SchemaOrgResetListener;
 use Survos\SchemaOrgBundle\Graph\SchemaOrgGraph;
+use Survos\SchemaOrgBundle\Mapping\SchemaOrgMapper;
+use Survos\SchemaOrgBundle\Mapping\SchemaOrgMetadataFactory;
 use Survos\SchemaOrgBundle\Renderer\SchemaOrgRenderer;
 use Survos\SchemaOrgBundle\Twig\SchemaOrgExtension;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -65,6 +67,11 @@ final class SurvosSchemaOrgBundle extends AbstractSurvosBundle
             ->arg('$debugPanel', $config['debug_panel']);
 
         $services->set(SchemaOrgResetListener::class);
+
+        // Attribute mapping. The factory is stateful (per-class reflection cache) and
+        // shared, so the reflection pass happens once per class per process.
+        $services->set(SchemaOrgMetadataFactory::class);
+        $services->set(SchemaOrgMapper::class)->public();
 
         if ($config['auto_inject']) {
             $services->set(SchemaOrgAutoInjectListener::class);
