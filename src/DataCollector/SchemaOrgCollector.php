@@ -78,7 +78,8 @@ final class SchemaOrgCollector extends AbstractDataCollector
         return $this->data['json'] ?? '';
     }
 
-    public static function getTemplate(): ?string
+    /** Narrower than the parent's ?string: this collector always has a template. */
+    public static function getTemplate(): string
     {
         return '@SurvosSchemaOrg/data_collector/schema_org.html.twig';
     }

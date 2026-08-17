@@ -159,6 +159,32 @@ closing a cycle (`A knows B knows A`): embedding there would put the node inside
 itself and recurse until the stack ran out, so an un-`@id`'d back-link is dropped.
 Give anything reachable in a cycle an `@id`.
 
+## Worked examples
+
+Three real consumers, in public repos, each exercising a different shape:
+
+| App | Type | Shows |
+|---|---|---|
+| [survos-sites/packages](https://github.com/survos-sites/packages) — `src/Schema/PackageSchema.php` | `SoftwareSourceCode` | **Both halves together**: `#[SchemaProperty]` attributes on the entity for the scalars, hand-written code for authors/vendor/statistics. Plus `CollectionPage` + `ItemList` on the listing page, and `auto_inject` for a detail template that extends EasyAdmin's layout. |
+| [survos-sites/bench](https://github.com/survos-sites/bench) — `src/Schema/MovieSchema.php` | `Movie` | Hand-written throughout. Name-only person columns, `AggregateRating`, `ImageObject`. |
+| kpa — `src/Schema/SongSchema.php` | `MusicComposition` | Work-vs-recording modelling: one composition, N `MusicRecording`s each wrapping an `AudioObject`. Copyright, and lyrics parsed out of ChordPro. |
+
+`packages` is the one to read first: it is the smallest, and it is the only one
+that uses the attribute mapper and hand-written composition side by side.
+
+### A note on picking types
+
+`packages` deliberately models a Symfony bundle as `SoftwareSourceCode`, not
+`SoftwareApplication` — a bundle is source you compose into an app, not an
+application anyone installs and runs. That costs the Google software rich result,
+which only `SoftwareApplication` gets. It also declines to turn a GitHub star
+count into an `aggregateRating`, which *would* earn a rich result and would be a
+number nobody stated; stars become `interactionStatistic` with a `LikeAction`
+instead.
+
+Both are the same trade: structured data is a claim about what something *is*.
+Reach for the type that is true, not the type with the SERP feature.
+
 ## Configuration
 
 ```yaml
