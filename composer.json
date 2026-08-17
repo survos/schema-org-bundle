@@ -1,0 +1,39 @@
+{
+    "name": "survos/schema-org-bundle",
+    "description": "Symfony integration for spatie/schema-org: a request-scoped JSON-LD graph that any service can contribute nodes to, rendered as one @graph script tag, with a debug panel.",
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "keywords": ["symfony", "schema.org", "json-ld", "structured-data", "seo"],
+    "require": {
+        "php": "^8.5",
+        "spatie/schema-org": "^5.0",
+        "survos/kit-bundle": "^2.6",
+        "symfony/config": "^8.1",
+        "symfony/dependency-injection": "^8.1",
+        "symfony/event-dispatcher": "^8.1",
+        "symfony/framework-bundle": "^8.1",
+        "symfony/http-kernel": "^8.1",
+        "twig/twig": "^3.21|^4.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^13.0",
+        "symfony/twig-bundle": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Survos\\SchemaOrgBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Survos\\SchemaOrgBundle\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "symfony": {
+            "require": "^8.1"
+        }
+    },
+    "prefer-stable": true
+}

@@ -1,0 +1,12 @@
+parameters:
+    level: 5
+    inferPrivatePropertyTypeFromConstructor: true
+    paths:
+        - ./src/
+        - ./tests/
+
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # DefinitionConfigurator's fluent tree is untyped past rootNode().
+        - '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::children\(\)\.#'
+        - '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeParentInterface::scalarNode\(\).#'
