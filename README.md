@@ -269,6 +269,12 @@ outlives the request. `SchemaOrgResetListener` empties it on every main request
 (priority 4096) so one page's nodes never leak into the next. Under php-fpm this
 is a no-op.
 
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md). Note 2.24.12 **removed** `schema_org_debug()` and the
+`debug_panel` config node in favour of the profiler data collector; a template still
+calling it will 500.
+
 ## Tests
 
 ```bash
