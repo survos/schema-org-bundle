@@ -137,6 +137,8 @@ property is correct JSON-LD; `"name": null` is not.
 
 Property hooks, `private(set)` properties, constructor-promoted `readonly`
 properties, and zero-argument getters can all carry `#[SchemaProperty]`.
+`#[SchemaOrg]` is inherited up the parent chain (nearest declaration wins), so a
+DTO hierarchy needs it declared only where the type actually changes.
 
 **Full reference: [docs/attributes.md](docs/attributes.md)** — every parameter,
 what can carry the attribute, value handling, relations, references vs. embedding,
@@ -168,12 +170,13 @@ Give anything reachable in a cycle an `@id`.
 
 ## Worked examples
 
-Three real consumers, in public repos, each exercising a different shape:
+Four real consumers, in public repos, each exercising a different shape:
 
 | App | Type | Shows |
 |---|---|---|
 | [survos-sites/packages](https://github.com/survos-sites/packages) — `src/Schema/PackageSchema.php` | `SoftwareSourceCode` | **Both halves together**: `#[SchemaProperty]` attributes on the entity for the scalars, hand-written code for authors/vendor/statistics. Plus `CollectionPage` + `ItemList` on the listing page, and `auto_inject` for a detail template that extends EasyAdmin's layout. |
 | [survos-sites/bench](https://github.com/survos-sites/bench) — `src/Schema/MovieSchema.php` | `Movie` | Hand-written throughout. Name-only person columns, `AggregateRating`, `ImageObject`. |
+| [survos/data-contracts](https://github.com/survos/data-contracts) — `src/Dto/Item/*` | 22 types | **Attributes only, and inherited**: `#[SchemaOrg]` on the DTO hierarchy, so `CartoonDto` resolves to `Drawing` three levels up. Every consumer of the contracts gets the mapping. |
 | kpa — `src/Schema/SongSchema.php` | `MusicComposition` | Work-vs-recording modelling: one composition, N `MusicRecording`s each wrapping an `AudioObject`. Copyright, and lyrics parsed out of ChordPro. |
 
 `packages` is the one to read first: it is the smallest, and it is the only one

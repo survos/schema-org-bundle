@@ -112,6 +112,48 @@ so the mapper cannot read it. Make it public, use private(set) for a
 public-get/private-set property, or move the attribute to a zero-argument getter.
 ```
 
+## Inheritance
+
+`#[SchemaOrg]` resolves up the parent chain; `#[SchemaProperty]` needs nothing
+special, because `getProperties()` already includes inherited properties.
+
+The shape this exists for is a DTO hierarchy where the leaves add almost nothing:
+
+```php
+abstract class AbstractEntityDto            // #[SchemaProperty('sameAs')] $sourceUrl
+abstract class BaseItemDto extends …        // #[SchemaProperty('name')] $title, …
+#[SchemaOrg('VisualArtwork')]
+abstract class ArtworkDto extends …
+class DrawingDto extends ArtworkDto {}      // declares only contentType()
+class CartoonDto extends DrawingDto {}      // declares only contentType()
+```
+
+`CartoonDto` resolves to `Drawing`, with `name`/`description`/`image` inherited from
+`BaseItemDto` and `sameAs` from `AbstractEntityDto` — three levels up. Without
+inherited `#[SchemaOrg]` every leaf would have to restate its type.
+
+**Nearest declaration wins**, so a subclass can narrow:
+
+```php
+#[SchemaOrg('Painting')]
+final class PaintingDto extends ArtworkDto {}   // Painting, not VisualArtwork
+```
+
+### The trap: a shared base spanning two branches
+
+Only declare a property on a base if it's valid for *every* subclass. schema.org
+splits at `Thing`, and `CreativeWork`, `Place` and `Event` are sibling branches — so
+a base shared by works and places can only carry **Thing-level** properties
+(`name`, `description`, `image`, `sameAs`, `url`, `identifier`).
+
+`survos/data-contracts` hit exactly this: `PlaceDto`, `PoiDto` and `EventDto` extend
+the same `BaseItemDto` as the work DTOs, so annotating `$citation` or `$creators`
+there would emit CreativeWork properties on `Place` nodes. The fix is a
+CreativeWork-only base to hang them on, not a cleverer mapper.
+
+`schema:map` is how you check what a class actually resolved to, inheritance
+included.
+
 ## Value handling
 
 | Input | Emitted |
